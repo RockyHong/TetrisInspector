@@ -2,22 +2,57 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class TetrisGameCore
+public class TetrisGameCore: IWindowListener
 {
-    public void OnInput(TetrisInput input)
+    Coordinate gameSize = new Coordinate(7, 15);
+    int[,] gameBoard = new int[1,1];
+
+    public string GetCreatorName()
     {
-        switch (input)
+        return "Rocky Hong";
+    }
+
+    public string GetGameName()
+    {
+        return "Tetris";
+    }
+
+    public string GetVersion()
+    {
+        return "0.0.1";
+    }
+
+    public int[,] GetViewArray()
+    {
+        return gameBoard;
+    }
+
+    public void Init()
+    {
+        gameBoard = new int[gameSize.x, gameSize.y];
+    }
+
+    public void OnInput(KeyCode input)
+    {
+        switch (Event.current.keyCode)
         {
-            case TetrisInput.MoveLeft:
+            case KeyCode.UpArrow:
+                //Rotate
                 break;
-            case TetrisInput.MoveRight:
+            case KeyCode.DownArrow:
+                //PushDown
                 break;
-            case TetrisInput.Rotate:
+            case KeyCode.RightArrow:
+                //MoveRight
                 break;
-            case TetrisInput.PushDown:
+            case KeyCode.LeftArrow:
+                //MoveLeft
                 break;
         }
     }
 
-    public enum TetrisInput { PushDown, MoveLeft, MoveRight, Rotate }
+    public void OnViewUpdate()
+    {
+        //Debug.Log("Update");
+    }
 }
