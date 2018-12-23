@@ -23,6 +23,18 @@ public struct Coordinate
         return new Coordinate(a.x - b.x, a.y - b.y);
     }
 
+    public static bool operator ==(Coordinate a, Coordinate b)
+    {
+        return a.x == b.x && a.y == b.y;
+    }
+
+    public static bool operator !=(Coordinate a, Coordinate b)
+    {
+        return a.x != b.x || a.y != b.y;
+    }
+
+    public static Coordinate Zero { get { return new Coordinate(0, 0); } }
+
     public static Coordinate RotateCoordinateByPivot(Coordinate coordinate, Coordinate pivot, RotateDirection rotateDiraction)
     {
         Coordinate relativeCoordinate = coordinate - pivot;
@@ -52,6 +64,13 @@ public struct Coordinate
         Coordinate rotatedCoordinate = new Coordinate(x, y);
         Coordinate result = pivot + rotatedCoordinate;
         return result;
+    }
+
+    public static Coordinate FromVector2(Vector2 vector)
+    {
+        return new Coordinate(
+            Mathf.RoundToInt(vector.x),
+            Mathf.RoundToInt(vector.y));
     }
 
     public enum RotateDirection { None, Right, Left, Oppsite }

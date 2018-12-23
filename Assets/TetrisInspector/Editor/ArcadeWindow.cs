@@ -21,7 +21,7 @@ public class ArcadeWindow : EditorWindow
     {
         return GetWindow<ArcadeWindow>();
     }
-    
+
     [MenuItem("UselessTools/Arcade Room/Tetris")]
     static void OpenTetrisWindow()
     {
@@ -37,11 +37,22 @@ public class ArcadeWindow : EditorWindow
 
     private void Update()
     {
-        Repaint(); 
+        CaculateDeltaTime();
+        ShakeWindowStep();
+        Repaint();
     }
 
     private void OnGUI()
     {
+        #region ShakeTest
+        for (int i = 0; i <= (int)ShakeWindowStrengh.Hard; i++)
+        {
+            ShakeWindowStrengh strengh = (ShakeWindowStrengh)i;
+            if (GUILayout.Button(strengh.ToString()))
+                ShakeWindow((ShakeWindowStrengh)i);
+        }
+        #endregion
+
         if (iWindowListener == null)
         {
             ScrollingTitle("- Arcade Room -");
@@ -94,6 +105,22 @@ public class ArcadeWindow : EditorWindow
             iWindowListener.OnInput(Event.current.keyCode);
     }
 
+    void CaculateDeltaTime()
+    {
+        double currentTime = EditorApplication.timeSinceStartup;
+
+        if (currentTime == lastFrameTime)
+        {
+            deltaTime = 0;
+        }
+        else
+        {
+            deltaTime = currentTime - lastFrameTime;
+            lastFrameTime = currentTime;
+        }
+    }
+
+    #region ScrollingTitle
     void ScrollingTitle(string title)
     {
         double scrollSpeed = 12;
@@ -119,31 +146,77 @@ public class ArcadeWindow : EditorWindow
 
         instance.titleContent = new GUIContent(titleText);
     }
+    #endregion
 
-    double lastFrameTime;
-    double _deltaTime;
-    double deltaTime
+    #region Shake Screen
+    float shake_duration = 1;
+    float shake_progress = 1;
+    float shake_magnetude;
+    Vector2 shake_oPos;
+    public void ShakeWindow(ShakeWindowStrengh strengh)
     {
-        get
+        shake_oPos = GetWindowPosition();
+        shake_progress = 0;
+        switch (strengh)
         {
-            double currentTime = EditorApplication.timeSinceStartup;
-
-            if (currentTime == lastFrameTime)
-            {
-                return _deltaTime;
-            }
-            else
-            {
-                _deltaTime = currentTime - lastFrameTime;
-                lastFrameTime = currentTime;
-            }
-            return deltaTime;
+            case ShakeWindowStrengh.Small:
+                shake_duration = .2f;
+                shake_magnetude = 1f;
+                break;
+            case ShakeWindowStrengh.Medium:
+                shake_duration = .25f;
+                shake_magnetude = 2f;
+                break;
+            case ShakeWindowStrengh.Hard:
+                shake_duration = .3f;
+                shake_magnetude = 5f;
+                break;
         }
     }
 
-    public void ShakeWindow()
+    void ShakeWindowStep()
     {
+        if (shake_progress < 1 && shake_progress >= 0)
+        {
+            shake_progress += (float)deltaTime / shake_duration;
+            shake_progress = Mathf.Clamp01(this.shake_progress);
 
+            Vector2 currentOffset = new Vector2(
+                UnityEngine.Random.Range(-1f, 1f) * shake_magnetude * (1 - shake_progress),
+                UnityEngine.Random.Range(-1f, 1f) * shake_magnetude * (1 - shake_progress));
+
+            SetWindowPosition(shake_oPos + currentOffset);
+        }
+        else if (shake_progress != -1)
+        {
+            ClearWindowPosition();
+            shake_progress = -1;
+        }
     }
-    enum ShakeWindowStrengh { Small, Medium, Hard }
+
+    void ClearWindowPosition()
+    {
+        SetWindowPosition(shake_oPos);
+    }
+
+    Vector2 GetWindowPosition()
+    {
+        Vector2 pos = position.position;
+        pos.y += 5; //Don't know why but need to fix this parameter
+        return pos;
+    }
+
+    void SetWindowPosition(Vector2 pos)
+    {
+        pos.x = Mathf.Clamp(pos.x, 50, 5000);
+        pos.y = Mathf.Clamp(pos.y, 50, 5000);
+        position = new Rect(pos.x, pos.y, position.width, position.height);
+    }
+
+    public enum ShakeWindowStrengh { Small, Medium, Hard }
+
+    double lastFrameTime;
+    double deltaTime;
+    #endregion
+
 }
