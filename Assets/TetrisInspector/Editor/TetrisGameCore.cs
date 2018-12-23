@@ -4,17 +4,22 @@ using UnityEngine;
 
 public class TetrisGameCore: IWindowListener
 {
-    Coordinate gameSize = new Coordinate(7, 15);
+    Coordinate gameSize = new Coordinate(10, 20);
     int[,] gameBoard = new int[1,1];
+
+    public string GetGameName()
+    {
+        return "Arcade Room * ";
+    }
+
+    public string GetVersionCode()
+    {
+        return "0.0.1";
+    }
 
     public string GetCreatorName()
     {
         return "Rocky Hong";
-    }
-
-    public string GetGameName()
-    {
-        return "Tetris";
     }
 
     const string PP_HighScore = "HighScoreForArcadeTetris";
@@ -23,19 +28,16 @@ public class TetrisGameCore: IWindowListener
         return PlayerPrefs.GetInt(PP_HighScore, 0);
     }
 
-    public string GetVersionCode()
-    {
-        return "0.0.1";
-    }
-
     public int[,] GetViewArray()
     {
         return gameBoard;
     }
 
+    bool isInit = false;
     public void Init()
     {
         gameBoard = new int[gameSize.x, gameSize.y];
+        isInit = true;
     }
 
     public void OnInput(KeyCode input)
@@ -59,6 +61,16 @@ public class TetrisGameCore: IWindowListener
 
     public void OnViewUpdate()
     {
-        //Debug.Log("Update");
+        if (!isInit)
+            Init();
+
+        viewWindow.SetViewArray(gameBoard);
     }
+
+    public string GetInstruction()
+    {
+        return "Arrow keys to control.";
+    }
+
+    ArcadeWindow viewWindow { get { return ArcadeWindow.instance; } }
 }

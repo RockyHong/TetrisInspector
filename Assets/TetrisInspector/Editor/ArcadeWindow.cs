@@ -7,7 +7,7 @@ using System;
 public class ArcadeWindow : EditorWindow
 {
     static ArcadeWindow _instance;
-    static ArcadeWindow instance
+    public static ArcadeWindow instance
     {
         get
         {
@@ -19,7 +19,11 @@ public class ArcadeWindow : EditorWindow
 
     static ArcadeWindow GetAracdeWindow()
     {
-        return GetWindow<ArcadeWindow>();
+        ArcadeWindow window = GetWindow<ArcadeWindow>();
+        Vector2 size = new Vector2(10 *18, 20 * 22);
+        window.minSize = size;
+        window.maxSize = size;
+        return window;
     }
 
     [MenuItem("UselessTools/Arcade Room/Tetris")]
@@ -44,6 +48,22 @@ public class ArcadeWindow : EditorWindow
 
     private void OnGUI()
     {
+        EditorGUILayout.Space();
+
+        if (iWindowListener == null)
+        {
+            ScrollingTitle("- Arcade Room -");
+            DrawSeletGameMode();
+        }
+        else
+        {
+            string gameTitle = iWindowListener.GetGameName();
+
+            ScrollingTitle(gameTitle);
+            iWindowListener.OnViewUpdate();
+            KeyBoardInputDetect();
+            DrawGameView();
+        }
         #region ShakeTest
         for (int i = 0; i <= (int)ShakeWindowStrengh.Hard; i++)
         {
@@ -53,26 +73,15 @@ public class ArcadeWindow : EditorWindow
         }
         #endregion
 
-        if (iWindowListener == null)
-        {
-            ScrollingTitle("- Arcade Room -");
-            DrawSeletGame();
-        }
-        else
-        {
-            string gameTitle = string.Format("{0} ( {1} ) by {2}      ",
-                iWindowListener.GetGameName(),
-                iWindowListener.GetVersionCode(),
-                iWindowListener.GetCreatorName());
+        EditorGUILayout.LabelField("Instruction : ");
+        EditorGUILayout.LabelField(iWindowListener.GetInstruction());
 
-            ScrollingTitle(gameTitle);
-            iWindowListener.OnViewUpdate();
-            KeyBoardInputDetect();
-            DrawGameView();
-        }
+        GUIStyle rightPaddingStyle = new GUIStyle(GUI.skin.label) { alignment = TextAnchor.MiddleRight };
+        EditorGUILayout.LabelField("Ver. " + iWindowListener.GetVersionCode(),rightPaddingStyle);
+        EditorGUILayout.LabelField("by " + iWindowListener.GetCreatorName(), rightPaddingStyle);
     }
 
-    void DrawSeletGame()
+    void DrawSeletGameMode()
     {
         if (GUILayout.Button("Tetris"))
         {
@@ -80,22 +89,48 @@ public class ArcadeWindow : EditorWindow
         }
     }
 
-    const double titleFlashFrequency = .5d;
+    const double highScoreFlashFrequency = .5d;
     void DrawGameView()
     {
-        var style = new GUIStyle(GUI.skin.label) { alignment = TextAnchor.MiddleCenter };
-
+        GUIStyle centerStyle = new GUIStyle(GUI.skin.label) { alignment = TextAnchor.MiddleCenter };
         double t = EditorApplication.timeSinceStartup;
-        if (t % titleFlashFrequency > titleFlashFrequency * .5f)
+        if (t % highScoreFlashFrequency > highScoreFlashFrequency * .5f)
         {
             int highScore = iWindowListener.GetHighScore();
             string highScoreText = highScore == 0 ? "--" : highScore.ToString();
-            EditorGUILayout.LabelField("High Score : " + highScoreText, style, GUILayout.ExpandWidth(true));
+            EditorGUILayout.LabelField("High Score : " + highScoreText, centerStyle, GUILayout.ExpandWidth(true));
         }
         else
         {
-            EditorGUILayout.LabelField(string.Empty, style, GUILayout.ExpandWidth(true));
+            EditorGUILayout.LabelField(string.Empty, centerStyle, GUILayout.ExpandWidth(true));
         }
+
+        DrawArrayView();
+    }
+
+    public void SetViewArray(int[,] array)
+    {
+        viewArray = array;
+    }
+
+    public static int[,] viewArray = new int[0,0];
+    void DrawArrayView()
+    {
+        EditorGUILayout.Space();
+        GUIStyle centerStyle = new GUIStyle(GUI.skin.label) { alignment = TextAnchor.MiddleCenter };
+        for (int y = 0; y < viewArray.GetLength(1); y++)
+        {
+            EditorGUILayout.BeginHorizontal();
+            EditorGUILayout.Space();
+            for (int x = 0; x < viewArray.GetLength(0); x++)
+            {
+                EditorGUILayout.Toggle(false, GUILayout.MinWidth(0), GUILayout.MinHeight(0), GUILayout.MaxWidth(10), GUILayout.MaxHeight(14));
+            }
+            EditorGUILayout.Space();
+            EditorGUILayout.EndHorizontal();
+        }
+        EditorGUILayout.Space();
+        EditorGUILayout.Space();
     }
 
     void KeyBoardInputDetect()

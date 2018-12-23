@@ -4,7 +4,11 @@ using UnityEngine;
 
 public interface IWindowListener
 {
+    void Init();
+
     string GetGameName();
+
+    string GetInstruction();
 
     string GetVersionCode();
 
