@@ -4,7 +4,7 @@ using UnityEngine;
 
 public class TetrisShapes
 {
-    Coordinate[] GetShapeCoordinates(Shape shape)
+    public static Coordinate[] GetShapeCoordinates(Shape shape)
     {
         switch (shape)
         {
@@ -29,7 +29,7 @@ public class TetrisShapes
         throw new System.Exception("Can't find matched shape in enum");
     }
 
-    Coordinate[] GetCoordinatesByIntArray(int[][] array)
+    public static Coordinate[] GetCoordinatesByIntArray(int[,] array)
     {
         List<Coordinate> coordinates = new List<Coordinate>();
 
@@ -38,53 +38,53 @@ public class TetrisShapes
                 Mathf.RoundToInt(array.GetLength(0) / 2),
                 Mathf.RoundToInt(array.GetLength(1) / 2));
 
-        for (int y = 0; y < array.GetLength(0); y++)
-            for (int x = 0; x < array.GetLength(1); x++)
-                if (array[x][y] == 1)
+        for (int y = 0; y < array.GetLength(1); y++)
+            for (int x = 0; x < array.GetLength(0); x++)
+                if (array[x,y] == 1)
                     coordinates.Add(new Coordinate(x, y) - center);
 
         return coordinates.ToArray();
     }
 
     #region Shapes' IntArray
-    int[][] ZShape_IntArray =
-            new int[][] {
-            new int[] { 1, 1, 0 },
-            new int[] { 0, 1, 1 }};
+    static int[,] ZShape_IntArray =
+            new int[,] {
+            { 1, 1, 0 },
+            { 0, 1, 1 }};
 
-    int[][] _ZShape_IntArray =
-        new int[][] {
-            new int[] { 0, 1, 1 },
-            new int[] { 1, 1, 0 }};
+    static int[,] _ZShape_IntArray =
+        new int[,] {
+            { 0, 1, 1 },
+            { 1, 1, 0 }};
 
-    int[][] LShape_IntArray =
-        new int[][] {
-            new int[] { 1, 0 },
-            new int[] { 1, 0 },
-            new int[] { 1, 1 }};
+    static int[,] LShape_IntArray =
+        new int[,] {
+            { 1, 0 },
+            { 1, 0 },
+            { 1, 1 }};
 
-    int[][] _LShape_IntArray =
-        new int[][] {
-            new int[] { 0, 1 },
-            new int[] { 0, 1 },
-            new int[] { 1, 1 }};
+    static int[,] _LShape_IntArray =
+        new int[,] {
+            { 0, 1 },
+            { 0, 1 },
+            { 1, 1 }};
 
-    int[][] TShape_IntArray =
-    new int[][] {
-            new int[] { 1, 1, 1 },
-            new int[] { 0, 1, 0 }};
+    static int[,] TShape_IntArray =
+    new int[,] {
+            { 1, 1, 1 },
+            { 0, 1, 0 }};
 
-    int[][] IShape_IntArray =
-        new int[][] {
-            new int[] { 1 },
-            new int[] { 1 },
-            new int[] { 1 },
-            new int[] { 1 }};
+    static int[,] IShape_IntArray =
+        new int[,] {
+            { 1 },
+            { 1 },
+            { 1 },
+            { 1 }};
 
-    int[][] Square_IntArray =
-        new int[][] {
-            new int[] { 1, 1 },
-            new int[] { 1, 1 }};
+    static int[,] Square_IntArray =
+        new int[,] {
+            { 1, 1 },
+            { 1, 1 }};
 #endregion
 
     public enum Shape { ZShape, _ZShape, LShape, _LShape, TShape, IShape, Square, Random }

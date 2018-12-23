@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEditor;
+using Unity.EditorCoroutines.Editor;
 using System;
 
 public class ArcadeWindow : EditorWindow
@@ -33,10 +34,10 @@ public class ArcadeWindow : EditorWindow
     }
 
     IWindowListener iWindowListener;
-
     public void SetWindowListener(IWindowListener iWindowListener)
     {
         this.iWindowListener = iWindowListener;
+        iWindowListener.StartGameCoreRunner();
     }
 
     private void Update()
@@ -53,35 +54,34 @@ public class ArcadeWindow : EditorWindow
         if (iWindowListener == null)
         {
             ScrollingTitle("- Arcade Room -");
-            DrawSeletGameMode();
+            DrawGameModeSelectionPanel();
         }
         else
         {
             string gameTitle = iWindowListener.GetGameName();
 
             ScrollingTitle(gameTitle);
-            iWindowListener.OnViewUpdate();
             KeyBoardInputDetect();
             DrawGameView();
-        }
-        #region ShakeTest
-        for (int i = 0; i <= (int)ShakeWindowStrengh.Hard; i++)
-        {
-            ShakeWindowStrengh strengh = (ShakeWindowStrengh)i;
-            if (GUILayout.Button(strengh.ToString()))
-                ShakeWindow((ShakeWindowStrengh)i);
-        }
-        #endregion
+            //#region ShakeTest
+            //for (int i = 0; i <= (int)ShakeWindowStrengh.Hard; i++)
+            //{
+            //    ShakeWindowStrengh strengh = (ShakeWindowStrengh)i;
+            //    if (GUILayout.Button(strengh.ToString()))
+            //        ShakeWindow((ShakeWindowStrengh)i);
+            //}
+            //#endregion
 
-        EditorGUILayout.LabelField("Instruction : ");
-        EditorGUILayout.LabelField(iWindowListener.GetInstruction());
+            EditorGUILayout.LabelField("Instruction : ");
+            EditorGUILayout.LabelField(iWindowListener.GetInstruction());
 
-        GUIStyle rightPaddingStyle = new GUIStyle(GUI.skin.label) { alignment = TextAnchor.MiddleRight };
-        EditorGUILayout.LabelField("Ver. " + iWindowListener.GetVersionCode(),rightPaddingStyle);
-        EditorGUILayout.LabelField("by " + iWindowListener.GetCreatorName(), rightPaddingStyle);
+            GUIStyle rightPaddingStyle = new GUIStyle(GUI.skin.label) { alignment = TextAnchor.MiddleRight };
+            EditorGUILayout.LabelField("Ver. " + iWindowListener.GetVersionCode(), rightPaddingStyle);
+            EditorGUILayout.LabelField("by " + iWindowListener.GetCreatorName(), rightPaddingStyle);
+        }
     }
 
-    void DrawSeletGameMode()
+    void DrawGameModeSelectionPanel()
     {
         if (GUILayout.Button("Tetris"))
         {
@@ -89,21 +89,15 @@ public class ArcadeWindow : EditorWindow
         }
     }
 
-    const double highScoreFlashFrequency = .5d;
     void DrawGameView()
     {
+        //Draw HighScore
         GUIStyle centerStyle = new GUIStyle(GUI.skin.label) { alignment = TextAnchor.MiddleCenter };
-        double t = EditorApplication.timeSinceStartup;
-        if (t % highScoreFlashFrequency > highScoreFlashFrequency * .5f)
-        {
-            int highScore = iWindowListener.GetHighScore();
-            string highScoreText = highScore == 0 ? "--" : highScore.ToString();
-            EditorGUILayout.LabelField("High Score : " + highScoreText, centerStyle, GUILayout.ExpandWidth(true));
-        }
-        else
-        {
-            EditorGUILayout.LabelField(string.Empty, centerStyle, GUILayout.ExpandWidth(true));
-        }
+        int highScore = iWindowListener.GetHighScore();
+        string highScoreNumberText = highScore == 0 ? "--" : highScore.ToString();
+        string highScoreText = "High Score : " + highScoreNumberText;
+        highScoreText = GetFlashTextString(highScoreText, FlashTextFrequency.Normal);
+        EditorGUILayout.LabelField(highScoreText, centerStyle, GUILayout.ExpandWidth(true));
 
         DrawArrayView();
     }
@@ -117,7 +111,6 @@ public class ArcadeWindow : EditorWindow
     void DrawArrayView()
     {
         EditorGUILayout.Space();
-        GUIStyle centerStyle = new GUIStyle(GUI.skin.label) { alignment = TextAnchor.MiddleCenter };
         for (int y = 0; y < viewArray.GetLength(1); y++)
         {
             EditorGUILayout.BeginHorizontal();
@@ -140,6 +133,8 @@ public class ArcadeWindow : EditorWindow
             iWindowListener.OnInput(Event.current.keyCode);
     }
 
+    double lastFrameTime;
+    double deltaTime;
     void CaculateDeltaTime()
     {
         double currentTime = EditorApplication.timeSinceStartup;
@@ -249,9 +244,35 @@ public class ArcadeWindow : EditorWindow
     }
 
     public enum ShakeWindowStrengh { Small, Medium, Hard }
-
-    double lastFrameTime;
-    double deltaTime;
     #endregion
 
+    #region FlashText
+    const double flashTextFrequency_Fast = .1d;
+    const double flashTextFrequency_Normal = .5d;
+    const double flashTextFrequency_Slow = 1d;
+    string GetFlashTextString(string text, FlashTextFrequency freq)
+    {
+        double flashFrequency = 1;
+        switch (freq)
+        {
+            case FlashTextFrequency.Fast:
+                flashFrequency = flashTextFrequency_Fast;
+                break;
+            case FlashTextFrequency.Normal:
+                flashFrequency = flashTextFrequency_Normal;
+                break;
+            case FlashTextFrequency.Slow:
+                flashFrequency = flashTextFrequency_Slow;
+                break;
+        }
+
+        double t = EditorApplication.timeSinceStartup;
+        if (t % flashFrequency > flashFrequency / 2)
+            text = string.Empty;
+
+        return text;
+    }
+
+    enum FlashTextFrequency { Slow, Normal, Fast }
+    #endregion
 }

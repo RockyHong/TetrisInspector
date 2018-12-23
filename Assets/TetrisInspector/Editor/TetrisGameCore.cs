@@ -1,5 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
+using Unity.EditorCoroutines.Editor;
+using UnityEditor;
 using UnityEngine;
 
 public class TetrisGameCore: IWindowListener
@@ -9,7 +11,7 @@ public class TetrisGameCore: IWindowListener
 
     public string GetGameName()
     {
-        return "Arcade Room * ";
+        return " TETRIS  TETRIS ";
     }
 
     public string GetVersionCode()
@@ -28,16 +30,34 @@ public class TetrisGameCore: IWindowListener
         return PlayerPrefs.GetInt(PP_HighScore, 0);
     }
 
-    public int[,] GetViewArray()
+    public string GetInstruction()
     {
-        return gameBoard;
+        return "Arrow keys to control.";
     }
 
-    bool isInit = false;
+    public EditorCoroutine StartGameCoreRunner()
+    {
+        EditorCoroutineUtility.StartCoroutine(TimeDetector(), this);
+        return EditorCoroutineUtility.StartCoroutine(GameCoreRunner(), this);
+    }
+
     public void Init()
     {
         gameBoard = new int[gameSize.x, gameSize.y];
-        isInit = true;
+    }
+
+    IEnumerator GameCoreRunner()
+    {
+        //Infinite Game Cycle
+        while (true)
+        {
+            Init();
+            viewWindow.SetViewArray(gameBoard);
+            //Spawn Player Shape
+            Coordinate[] currentShape = TetrisShapes.GetShapeCoordinates(TetrisShapes.Shape.Random);
+            Coordinate shapePos = Coordinate.Zero;
+            yield return null;
+        }
     }
 
     public void OnInput(KeyCode input)
@@ -59,18 +79,20 @@ public class TetrisGameCore: IWindowListener
         }
     }
 
-    public void OnViewUpdate()
+    #region DeltaTimeDetector
+    double lastFrameTime;
+    double deltaTime;
+    IEnumerator TimeDetector()
     {
-        if (!isInit)
-            Init();
-
-        viewWindow.SetViewArray(gameBoard);
+        while (true)
+        {
+            double currentTime = EditorApplication.timeSinceStartup;
+            deltaTime = currentTime - lastFrameTime;
+            lastFrameTime = currentTime;
+            yield return null;
+        }
     }
-
-    public string GetInstruction()
-    {
-        return "Arrow keys to control.";
-    }
+    #endregion
 
     ArcadeWindow viewWindow { get { return ArcadeWindow.instance; } }
 }

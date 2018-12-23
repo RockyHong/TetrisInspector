@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using Unity.EditorCoroutines.Editor;
 
 public interface IWindowListener
 {
@@ -16,9 +17,7 @@ public interface IWindowListener
 
     int GetHighScore();
 
-    int[,] GetViewArray();
-
-    void OnViewUpdate();
-
     void OnInput(KeyCode input);
+
+    EditorCoroutine StartGameCoreRunner();
 }
