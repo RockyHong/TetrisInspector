@@ -6,9 +6,11 @@ public interface IWindowListener
 {
     string GetGameName();
 
-    string GetVersion();
+    string GetVersionCode();
 
     string GetCreatorName();
+
+    int GetHighScore();
 
     int[,] GetViewArray();
 

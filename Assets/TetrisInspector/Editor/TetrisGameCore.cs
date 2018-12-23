@@ -17,7 +17,13 @@ public class TetrisGameCore: IWindowListener
         return "Tetris";
     }
 
-    public string GetVersion()
+    const string PP_HighScore = "HighScoreForArcadeTetris";
+    public int GetHighScore()
+    {
+        return PlayerPrefs.GetInt(PP_HighScore, 0);
+    }
+
+    public string GetVersionCode()
     {
         return "0.0.1";
     }

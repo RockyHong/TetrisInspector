@@ -2,10 +2,20 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEditor;
+using System;
 
 public class ArcadeWindow : EditorWindow
 {
-    static ArcadeWindow window;
+    static ArcadeWindow _instance;
+    static ArcadeWindow instance
+    {
+        get
+        {
+            if (_instance == null)
+                _instance = GetAracdeWindow();
+            return _instance;
+        }
+    }
 
     static ArcadeWindow GetAracdeWindow()
     {
@@ -15,8 +25,7 @@ public class ArcadeWindow : EditorWindow
     [MenuItem("UselessTools/Arcade Room/Tetris")]
     static void OpenTetrisWindow()
     {
-        window = GetAracdeWindow();
-        window.SetWindowListener(new TetrisGameCore());
+        instance.SetWindowListener(new TetrisGameCore());
     }
 
     IWindowListener iWindowListener;
@@ -26,24 +35,30 @@ public class ArcadeWindow : EditorWindow
         this.iWindowListener = iWindowListener;
     }
 
-    double lastGameViewTime;
     private void Update()
     {
         Repaint(); 
     }
 
-    float passiveUpdateTime;
     private void OnGUI()
     {
         if (iWindowListener == null)
         {
+            ScrollingTitle("- Arcade Room -");
             DrawSeletGame();
-            return;
         }
+        else
+        {
+            string gameTitle = string.Format("{0} ( {1} ) by {2}      ",
+                iWindowListener.GetGameName(),
+                iWindowListener.GetVersionCode(),
+                iWindowListener.GetCreatorName());
 
-        iWindowListener.OnViewUpdate();
-        KeyBoardInputDetect();
-        DrawGameView();
+            ScrollingTitle(gameTitle);
+            iWindowListener.OnViewUpdate();
+            KeyBoardInputDetect();
+            DrawGameView();
+        }
     }
 
     void DrawSeletGame()
@@ -54,13 +69,22 @@ public class ArcadeWindow : EditorWindow
         }
     }
 
+    const double titleFlashFrequency = .5d;
     void DrawGameView()
     {
         var style = new GUIStyle(GUI.skin.label) { alignment = TextAnchor.MiddleCenter };
 
-        EditorGUILayout.LabelField(iWindowListener.GetGameName(), style, GUILayout.ExpandWidth(true));
-        EditorGUILayout.LabelField(iWindowListener.GetVersion(), style, GUILayout.ExpandWidth(true));
-        EditorGUILayout.LabelField(iWindowListener.GetCreatorName(), style, GUILayout.ExpandWidth(true));
+        double t = EditorApplication.timeSinceStartup;
+        if (t % titleFlashFrequency > titleFlashFrequency * .5f)
+        {
+            int highScore = iWindowListener.GetHighScore();
+            string highScoreText = highScore == 0 ? "--" : highScore.ToString();
+            EditorGUILayout.LabelField("High Score : " + highScoreText, style, GUILayout.ExpandWidth(true));
+        }
+        else
+        {
+            EditorGUILayout.LabelField(string.Empty, style, GUILayout.ExpandWidth(true));
+        }
     }
 
     void KeyBoardInputDetect()
@@ -70,10 +94,30 @@ public class ArcadeWindow : EditorWindow
             iWindowListener.OnInput(Event.current.keyCode);
     }
 
-    void ScrollingTitle()
+    void ScrollingTitle(string title)
     {
-        string gameName = iWindowListener.GetGameName();
-        window.titleContent = new GUIContent(gameName, "s");
+        double scrollSpeed = 12;
+        double systemTime = EditorApplication.timeSinceStartup;
+        int shiftIndex = (int)Math.Round(systemTime * scrollSpeed);
+        shiftIndex %= title.Length;
+
+        List<char> chars = new List<char>();
+        chars.AddRange(title);
+
+        for (int i = 0; i < shiftIndex; i++)
+        {
+            char c = chars[0];
+            chars.RemoveAt(0);
+            chars.Add(c);
+        }
+
+        string titleText = string.Empty;
+        for (int j = 0; j < chars.Count; j++)
+        {
+            titleText += chars[j];
+        }
+
+        instance.titleContent = new GUIContent(titleText);
     }
 
     double lastFrameTime;
@@ -96,4 +140,10 @@ public class ArcadeWindow : EditorWindow
             return deltaTime;
         }
     }
+
+    public void ShakeWindow()
+    {
+
+    }
+    enum ShakeWindowStrengh { Small, Medium, Hard }
 }
