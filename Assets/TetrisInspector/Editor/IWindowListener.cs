@@ -5,8 +5,6 @@ using Unity.EditorCoroutines.Editor;
 
 public interface IWindowListener
 {
-    void Init();
-
     string GetGameName();
 
     string GetInstruction();

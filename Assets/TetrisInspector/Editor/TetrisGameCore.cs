@@ -3,11 +3,13 @@ using System.Collections.Generic;
 using Unity.EditorCoroutines.Editor;
 using UnityEditor;
 using UnityEngine;
+using System;
 
-public class TetrisGameCore: IWindowListener
+public class TetrisGameCore : IWindowListener
 {
+    #region Properties
     Coordinate gameSize = new Coordinate(10, 20);
-    int[,] gameBoard = new int[1,1];
+    int[,] gameBoard = new int[1, 1];
 
     public string GetGameName()
     {
@@ -34,6 +36,7 @@ public class TetrisGameCore: IWindowListener
     {
         return "Arrow keys to control.";
     }
+    #endregion
 
     public EditorCoroutine StartGameCoreRunner()
     {
@@ -41,23 +44,41 @@ public class TetrisGameCore: IWindowListener
         return EditorCoroutineUtility.StartCoroutine(GameCoreRunner(), this);
     }
 
-    public void Init()
+    void Init()
     {
         gameBoard = new int[gameSize.x, gameSize.y];
+        viewWindow.SetViewArray(gameBoard);
     }
 
+    PlayerShape playerShape;
     IEnumerator GameCoreRunner()
     {
+        Init();
         //Infinite Game Cycle
         while (true)
         {
-            Init();
-            viewWindow.SetViewArray(gameBoard);
             //Spawn Player Shape
-            Coordinate[] currentShape = TetrisShapes.GetShapeCoordinates(TetrisShapes.Shape.Random);
-            Coordinate shapePos = Coordinate.Zero;
-            yield return null;
+            playerShape = new PlayerShape();
+            playerShape.shapeCoordinates = TetrisShapes.GetShapeCoordinates(TetrisShapes.Shape.Random);
+            playerShape.shapeCoordinates += new Coordinate(Mathf.RoundToInt(gameSize.x / 2), gameSize.y - 3);
+            while (playerShape != null)
+            {
+                RefreshViewArray();
+                yield return null;
+            }
         }
+    }
+
+    void RefreshViewArray()
+    {
+        int[,] viewArray = gameBoard.Clone() as int[,];
+        foreach (Coordinate c in playerShape.shapeCoordinates)
+        {
+            if (c.x >= 0 && c.y >= 0 && c.x < viewArray.GetLength(0) && c.y < viewArray.GetLength(1))
+                viewArray[c.x, c.y] = 1;
+        }
+
+        viewWindow.SetViewArray(viewArray);
     }
 
     public void OnInput(KeyCode input)
@@ -65,19 +86,96 @@ public class TetrisGameCore: IWindowListener
         switch (Event.current.keyCode)
         {
             case KeyCode.UpArrow:
-                //Rotate
+                RotatePlayer();
                 break;
             case KeyCode.DownArrow:
-                //PushDown
+                FallDownPlayer();
                 break;
             case KeyCode.RightArrow:
-                //MoveRight
+                MovePlayer(1);
                 break;
             case KeyCode.LeftArrow:
-                //MoveLeft
+                MovePlayer(-1);
                 break;
         }
     }
+
+    #region PlayerBehaviour
+    void MovePlayer(int offset)
+    {
+        Coordinate[] coordinates = playerShape.shapeCoordinates.Clone() as Coordinate[];
+        coordinates += Coordinate.Right * offset;
+
+        if (DetectIfCollideWithGameBoard(coordinates))
+            playerShape.shapeCoordinates = coordinates;
+        else
+            viewWindow.ShakeWindow(ArcadeWindow.ShakeWindowStrengh.Small);
+    }
+
+    bool RotatePlayer()
+    {
+        Coordinate[] coordinates = playerShape.shapeCoordinates.Clone() as Coordinate[];
+        Coordinate center = Coordinate.GetCenterInCoordinates(coordinates);
+        coordinates = Coordinate.RotateCoordinatesByPivot(coordinates, center, Coordinate.RotateDirection.Right);
+
+        bool isAvailable = DetectIfCollideWithGameBoard(coordinates);
+        if (isAvailable)
+            playerShape.shapeCoordinates = coordinates;
+        else
+            viewWindow.ShakeWindow(ArcadeWindow.ShakeWindowStrengh.Small);
+
+        return isAvailable;
+    }
+
+    bool FallDownPlayer()
+    {
+        Coordinate[] coordinates = playerShape.shapeCoordinates.Clone() as Coordinate[];
+        coordinates += Coordinate.Down;
+
+        bool isAvailable = DetectIfCollideWithGameBoard(coordinates);
+        if (isAvailable)
+            playerShape.shapeCoordinates = coordinates;
+        else
+            OnLand();
+        return isAvailable;
+    }
+
+    void FallPlayerToBottom()
+    {
+        while (FallDownPlayer()) ;
+    }
+
+    bool DetectIfCollideWithGameBoard(Coordinate[] coordinates)
+    {
+        foreach (Coordinate c in coordinates)
+        {
+            //Check is outside of gameboard
+            if (c.x >= gameBoard.GetLength(0) || c.y >= gameBoard.GetLength(1) || c.x < 0 || c.y < 0)
+                return false;
+
+            //Check is overlap gameboard
+            if (gameBoard[c.x, c.y] == 1)
+                return false;
+        }
+        return true;
+    }
+
+    void OnLand()
+    {
+        foreach (Coordinate c in playerShape.shapeCoordinates)
+            gameBoard[c.x, c.y] = 1;
+
+        viewWindow.ShakeWindow(ArcadeWindow.ShakeWindowStrengh.Medium);
+
+        playerShape = null;
+    }
+
+    class PlayerShape
+    {
+        public Coordinate[] shapeCoordinates;
+    }
+        
+    #endregion
 
     #region DeltaTimeDetector
     double lastFrameTime;

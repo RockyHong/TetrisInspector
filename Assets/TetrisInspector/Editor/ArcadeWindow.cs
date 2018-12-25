@@ -111,13 +111,13 @@ public class ArcadeWindow : EditorWindow
     void DrawArrayView()
     {
         EditorGUILayout.Space();
-        for (int y = 0; y < viewArray.GetLength(1); y++)
+        for (int y = viewArray.GetLength(1) - 1; y >= 0; y--)
         {
             EditorGUILayout.BeginHorizontal();
             EditorGUILayout.Space();
             for (int x = 0; x < viewArray.GetLength(0); x++)
             {
-                EditorGUILayout.Toggle(false, GUILayout.MinWidth(0), GUILayout.MinHeight(0), GUILayout.MaxWidth(10), GUILayout.MaxHeight(14));
+                EditorGUILayout.Toggle(viewArray[x, y] == 1, GUILayout.MinWidth(0), GUILayout.MinHeight(0), GUILayout.MaxWidth(10), GUILayout.MaxHeight(14));
             }
             EditorGUILayout.Space();
             EditorGUILayout.EndHorizontal();
@@ -180,7 +180,7 @@ public class ArcadeWindow : EditorWindow
 
     #region Shake Screen
     float shake_duration = 1;
-    float shake_progress = 1;
+    float shake_progress = -1;
     float shake_magnetude;
     Vector2 shake_oPos;
     public void ShakeWindow(ShakeWindowStrengh strengh)
