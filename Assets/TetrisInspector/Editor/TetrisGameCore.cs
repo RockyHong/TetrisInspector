@@ -9,7 +9,7 @@ public class TetrisGameCore : IWindowListener
 {
     #region Properties
     Coordinate gameSize = new Coordinate(10, 20);
-    int[,] gameBoard = new int[1, 1];
+    BlockState[,] gameBoard = new BlockState[1, 1];
 
     public string GetGameName()
     {
@@ -46,10 +46,13 @@ public class TetrisGameCore : IWindowListener
 
     void Init()
     {
-        gameBoard = new int[gameSize.x, gameSize.y];
-        viewWindow.SetViewArray(gameBoard);
+        gameBoard = new BlockState[gameSize.x, gameSize.y];
+        int[,] array = gameBoard.Clone() as int[,];
+
+        viewWindow.SetViewArray(array);
     }
 
+    bool isHasMatchedLine = false;
     PlayerShape playerShape;
     IEnumerator GameCoreRunner()
     {
@@ -63,8 +66,9 @@ public class TetrisGameCore : IWindowListener
             playerShape.shapeCoordinates += new Coordinate(Mathf.RoundToInt(gameSize.x / 2), gameSize.y - 3);
             while (playerShape != null)
             {
-                RefreshViewArray();
-                yield return null;
+                    RefreshViewArray();
+                    yield return null;
+                }
             }
         }
     }
@@ -79,6 +83,30 @@ public class TetrisGameCore : IWindowListener
         }
 
         viewWindow.SetViewArray(viewArray);
+    }
+
+    BlockState[,] CheckMatch()
+    {
+        BlockState[,] array = gameBoard.Clone() as BlockState[,];
+        for (int y = 0; y < array.GetLength(1); y++)
+        {
+            bool isMatched = true;
+            for (int x = 0; x < array.GetLength(0); x++)
+            {
+                if (array[x, y] == BlockState.Empty)
+                    isMatched = false;
+            }
+
+            if (isMatched)
+            {
+                for (int x = 0; x < array.GetLength(0); x++)
+                {
+                    array[x, y] = BlockState.ReadyToClear;
+                }
+            }
+        }
+
+        return array;
     }
 
     public void OnInput(KeyCode input)
@@ -154,7 +182,7 @@ public class TetrisGameCore : IWindowListener
                 return false;
 
             //Check is overlap gameboard
-            if (gameBoard[c.x, c.y] == 1)
+            if (gameBoard[c.x, c.y] == BlockState.Block)
                 return false;
         }
         return true;
@@ -163,7 +191,7 @@ public class TetrisGameCore : IWindowListener
     void OnLand()
     {
         foreach (Coordinate c in playerShape.shapeCoordinates)
-            gameBoard[c.x, c.y] = 1;
+            gameBoard[c.x, c.y] = BlockState.Block;
 
         viewWindow.ShakeWindow(ArcadeWindow.ShakeWindowStrengh.Medium);
 
@@ -193,4 +221,6 @@ public class TetrisGameCore : IWindowListener
     #endregion
 
     ArcadeWindow viewWindow { get { return ArcadeWindow.instance; } }
+
+    enum BlockState { Empty, Block, ReadyToClear }
 }
