@@ -41,6 +41,7 @@ public class TetrisGameCore : IWindowListener
     public EditorCoroutine StartGameCoreRunner()
     {
         EditorCoroutineUtility.StartCoroutine(TimeDetector(), this);
+        EditorCoroutineUtility.StartCoroutine(ViewUpdater(), this);
         return EditorCoroutineUtility.StartCoroutine(GameCoreRunner(), this);
     }
 
@@ -57,6 +58,7 @@ public class TetrisGameCore : IWindowListener
     IEnumerator GameCoreRunner()
     {
         Init();
+
         //Infinite Game Cycle
         while (true)
         {
@@ -66,20 +68,31 @@ public class TetrisGameCore : IWindowListener
             playerShape.shapeCoordinates += new Coordinate(Mathf.RoundToInt(gameSize.x / 2), gameSize.y - 3);
             while (playerShape != null)
             {
-                    RefreshViewArray();
-                    yield return null;
-                }
+                yield return null;
             }
+        }
+    }
+
+    IEnumerator ViewUpdater()
+    {
+        while (true)
+        {
+            RefreshViewArray();
+            yield return null;
         }
     }
 
     void RefreshViewArray()
     {
         int[,] viewArray = gameBoard.Clone() as int[,];
-        foreach (Coordinate c in playerShape.shapeCoordinates)
+
+        if (playerShape != null)
         {
-            if (c.x >= 0 && c.y >= 0 && c.x < viewArray.GetLength(0) && c.y < viewArray.GetLength(1))
-                viewArray[c.x, c.y] = 1;
+            foreach (Coordinate c in playerShape.shapeCoordinates)
+            {
+                if (c.x >= 0 && c.y >= 0 && c.x < viewArray.GetLength(0) && c.y < viewArray.GetLength(1))
+                    viewArray[c.x, c.y] = 1;
+            }
         }
 
         viewWindow.SetViewArray(viewArray);
