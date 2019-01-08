@@ -102,12 +102,15 @@ public class ArcadeWindow : EditorWindow
         DrawArrayView();
     }
 
-    public void SetViewArray(int[,] array)
+    public void SetViewArray(ArrayViewBlockState[,] array)
     {
-        viewArray = array;
+        viewArray = array.Clone() as ArrayViewBlockState[,];
     }
 
-    public static int[,] viewArray = new int[0,0];
+    public static ArrayViewBlockState[,] viewArray = new ArrayViewBlockState[0,0];
+    public enum ArrayViewBlockState { Empty, Block, Flash }
+    const float ArrayViewBlockFlashFPS = 10f;
+
     void DrawArrayView()
     {
         EditorGUILayout.Space();
@@ -117,7 +120,11 @@ public class ArcadeWindow : EditorWindow
             EditorGUILayout.Space();
             for (int x = 0; x < viewArray.GetLength(0); x++)
             {
-                EditorGUILayout.Toggle(viewArray[x, y] == 1, GUILayout.MinWidth(0), GUILayout.MinHeight(0), GUILayout.MaxWidth(10), GUILayout.MaxHeight(14));
+                bool isShowBlock = viewArray[x, y] == ArrayViewBlockState.Block ||
+                    viewArray[x, y] == ArrayViewBlockState.Flash &&
+                    Mathf.FloorToInt((float)EditorApplication.timeSinceStartup * ArrayViewBlockFlashFPS) % 2 == 0;
+
+                EditorGUILayout.Toggle(isShowBlock, GUILayout.MinWidth(0), GUILayout.MinHeight(0), GUILayout.MaxWidth(10), GUILayout.MaxHeight(14));
             }
             EditorGUILayout.Space();
             EditorGUILayout.EndHorizontal();

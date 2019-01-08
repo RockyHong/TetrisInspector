@@ -48,12 +48,11 @@ public class TetrisGameCore : IWindowListener
     void Init()
     {
         gameBoard = new BlockState[gameSize.x, gameSize.y];
-        int[,] array = gameBoard.Clone() as int[,];
 
-        viewWindow.SetViewArray(array);
+        //var viewArray = BlockStatesArray2ViewArray(gameBoard);
+        //viewWindow.SetViewArray(viewArray);
     }
 
-    bool isHasMatchedLine = false;
     PlayerShape playerShape;
     IEnumerator GameCoreRunner()
     {
@@ -70,7 +69,42 @@ public class TetrisGameCore : IWindowListener
             {
                 yield return null;
             }
+
+            BlockState[,] newBlockStates;
+            bool isAnyMatchedLines = CheckMatch(out newBlockStates);
+            gameBoard = newBlockStates;
+
+            if (isAnyMatchedLines)
+            {
+                yield return new EditorWaitForSeconds(1f);
+                ClearLine();
+            }
         }
+    }
+
+    void ClearLine()
+    {
+        BlockState[,] blockStates = gameBoard.Clone() as BlockState[,];
+        for (int x = 0; x < blockStates.GetLength(0); x++)
+        {
+            int clearedBlockCount = 0;
+            for (int y = 0; y < blockStates.GetLength(1); y++)
+            {
+                if (blockStates[x, y] == BlockState.ReadyToClear)
+                {
+                    blockStates[x, y] = BlockState.Empty;
+                    clearedBlockCount++;
+                }
+
+                if (blockStates[x, y] == BlockState.Block && clearedBlockCount > 0)
+                {
+                    blockStates[x, y] = BlockState.Empty;
+                    blockStates[x, y - clearedBlockCount] = BlockState.Block;
+                }
+            }
+        }
+        gameBoard = blockStates.Clone() as BlockState[,];
+        ArcadeWindow.instance.ShakeWindow(ArcadeWindow.ShakeWindowStrengh.Small);
     }
 
     IEnumerator ViewUpdater()
@@ -84,23 +118,26 @@ public class TetrisGameCore : IWindowListener
 
     void RefreshViewArray()
     {
-        int[,] viewArray = gameBoard.Clone() as int[,];
+        BlockState[,] mergedGameBoard = gameBoard.Clone() as BlockState[,];
 
         if (playerShape != null)
         {
             foreach (Coordinate c in playerShape.shapeCoordinates)
             {
-                if (c.x >= 0 && c.y >= 0 && c.x < viewArray.GetLength(0) && c.y < viewArray.GetLength(1))
-                    viewArray[c.x, c.y] = 1;
+                if (c.x >= 0 && c.y >= 0 && c.x < mergedGameBoard.GetLength(0) && c.y < mergedGameBoard.GetLength(1))
+                    mergedGameBoard[c.x, c.y] = BlockState.Block;
             }
         }
 
+        var viewArray = BlockStatesArray2ViewArray(mergedGameBoard);
         viewWindow.SetViewArray(viewArray);
     }
 
-    BlockState[,] CheckMatch()
+    bool CheckMatch(out BlockState[,] blockStates)
     {
         BlockState[,] array = gameBoard.Clone() as BlockState[,];
+
+        bool isAnyMatchedLines = false;
         for (int y = 0; y < array.GetLength(1); y++)
         {
             bool isMatched = true;
@@ -112,6 +149,7 @@ public class TetrisGameCore : IWindowListener
 
             if (isMatched)
             {
+                isAnyMatchedLines = true;
                 for (int x = 0; x < array.GetLength(0); x++)
                 {
                     array[x, y] = BlockState.ReadyToClear;
@@ -119,11 +157,50 @@ public class TetrisGameCore : IWindowListener
             }
         }
 
-        return array;
+        blockStates = array;
+
+        return isAnyMatchedLines;
+    }
+
+    ArcadeWindow.ArrayViewBlockState[,] BlockStatesArray2ViewArray(BlockState[,] blockStates)
+    {
+        int lengthX = blockStates.GetLength(0);
+        int lengthY = blockStates.GetLength(1);
+
+        if (lengthX <= 0 || lengthY <= 0)
+            return new ArcadeWindow.ArrayViewBlockState[0, 0];
+
+        ArcadeWindow.ArrayViewBlockState[,] result = new ArcadeWindow.ArrayViewBlockState[lengthX, lengthY];
+
+        for (int x = 0; x < lengthX; x++)
+        {
+            for (int y = 0; y < lengthY; y++)
+            {
+                ArcadeWindow.ArrayViewBlockState viewBlockState = ArcadeWindow.ArrayViewBlockState.Empty;
+                switch (blockStates[x, y])
+                {
+                    case BlockState.Empty:
+                        viewBlockState = ArcadeWindow.ArrayViewBlockState.Empty;
+                        break;
+                    case BlockState.Block:
+                        viewBlockState = ArcadeWindow.ArrayViewBlockState.Block;
+                        break;
+                    case BlockState.ReadyToClear:
+                        viewBlockState = ArcadeWindow.ArrayViewBlockState.Flash;
+                        break;
+                }
+
+                result[x, y] = viewBlockState;
+            }
+        }
+        return result;
     }
 
     public void OnInput(KeyCode input)
     {
+        if (playerShape == null)
+            return;
+
         switch (Event.current.keyCode)
         {
             case KeyCode.UpArrow:
