@@ -124,7 +124,12 @@ public class ArcadeWindow : EditorWindow
                     viewArray[x, y] == ArrayViewBlockState.Flash &&
                     Mathf.FloorToInt((float)EditorApplication.timeSinceStartup * ArrayViewBlockFlashFPS) % 2 == 0;
 
-                EditorGUILayout.Toggle(isShowBlock, GUILayout.MinWidth(0), GUILayout.MinHeight(0), GUILayout.MaxWidth(10), GUILayout.MaxHeight(14));
+                bool isClick = EditorGUILayout.Toggle(isShowBlock, GUILayout.MinWidth(0), GUILayout.MinHeight(0), GUILayout.MaxWidth(10), GUILayout.MaxHeight(14));
+
+                if (!isShowBlock && isClick)
+                {
+                    iWindowListener.OnMouseClick(x, y);
+                }
             }
             EditorGUILayout.Space();
             EditorGUILayout.EndHorizontal();
@@ -137,7 +142,7 @@ public class ArcadeWindow : EditorWindow
     {
         Event e = Event.current;
         if (e.type == EventType.KeyDown)
-            iWindowListener.OnInput(Event.current.keyCode);
+            iWindowListener.OnKeyboardInput(Event.current.keyCode);
     }
 
     double lastFrameTime;

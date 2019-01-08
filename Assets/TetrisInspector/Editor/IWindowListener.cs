@@ -15,7 +15,9 @@ public interface IWindowListener
 
     int GetHighScore();
 
-    void OnInput(KeyCode input);
+    void OnKeyboardInput(KeyCode input);
+
+    void OnMouseClick(int x, int y);
 
     EditorCoroutine StartGameCoreRunner();
 }

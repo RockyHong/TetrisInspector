@@ -48,9 +48,6 @@ public class TetrisGameCore : IWindowListener
     void Init()
     {
         gameBoard = new BlockState[gameSize.x, gameSize.y];
-
-        //var viewArray = BlockStatesArray2ViewArray(gameBoard);
-        //viewWindow.SetViewArray(viewArray);
     }
 
     PlayerShape playerShape;
@@ -196,7 +193,22 @@ public class TetrisGameCore : IWindowListener
         return result;
     }
 
-    public void OnInput(KeyCode input)
+    public void OnMouseClick(int x, int y)
+    {
+        switch (gameBoard[x, y])
+        {
+            case BlockState.Empty:
+                gameBoard[x, y] = BlockState.Block;
+                break;
+            case BlockState.Block:
+                gameBoard[x, y] = BlockState.Empty;
+                break;
+            case BlockState.ReadyToClear:
+                break;
+        }
+    }
+
+    public void OnKeyboardInput(KeyCode input)
     {
         if (playerShape == null)
             return;
