@@ -50,6 +50,7 @@ public class TetrisGameCore : IWindowListener
         gameBoard = new BlockState[gameSize.x, gameSize.y];
     }
 
+    const float FallFrequency = 1f;
     PlayerShape playerShape;
     IEnumerator GameCoreRunner()
     {
@@ -62,8 +63,18 @@ public class TetrisGameCore : IWindowListener
             playerShape = new PlayerShape();
             playerShape.shapeCoordinates = TetrisShapes.GetShapeCoordinates(TetrisShapes.Shape.Random);
             playerShape.shapeCoordinates += new Coordinate(Mathf.RoundToInt(gameSize.x / 2), gameSize.y - 3);
+
+            double t = 0;
             while (playerShape != null)
             {
+                t += deltaTime;
+                if (t > FallFrequency)
+                {
+                    t -= FallFrequency;
+                    t %= FallFrequency;
+                    FallDownPlayer();
+                }
+
                 yield return null;
             }
 
@@ -219,7 +230,7 @@ public class TetrisGameCore : IWindowListener
                 RotatePlayer();
                 break;
             case KeyCode.DownArrow:
-                FallDownPlayer();
+                FallPlayerToBottom();
                 break;
             case KeyCode.RightArrow:
                 MovePlayer(1);
@@ -273,6 +284,7 @@ public class TetrisGameCore : IWindowListener
     void FallPlayerToBottom()
     {
         while (FallDownPlayer()) ;
+        ArcadeWindow.instance.ShakeWindow(ArcadeWindow.ShakeWindowStrengh.Hard);
     }
 
     bool DetectIfCollideWithGameBoard(Coordinate[] coordinates)
