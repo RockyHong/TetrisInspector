@@ -40,13 +40,16 @@ public class TetrisGameCore : IWindowListener
 
     public EditorCoroutine StartGameCoreRunner()
     {
-        EditorCoroutineUtility.StartCoroutine(TimeDetector(), this);
-        EditorCoroutineUtility.StartCoroutine(ViewUpdater(), this);
-        return EditorCoroutineUtility.StartCoroutine(GameCoreRunner(), this);
+        EditorCoroutineUtility.StartCoroutine(TimeDetector(), ArcadeWindow.instance);
+        EditorCoroutineUtility.StartCoroutine(ViewUpdater(), ArcadeWindow.instance);
+        return EditorCoroutineUtility.StartCoroutine(GameCoreRunner(), ArcadeWindow.instance);
     }
+
+    bool isGaming = true;
 
     void Init()
     {
+        isGaming = true;
         gameBoard = new BlockState[gameSize.x, gameSize.y];
     }
 
@@ -57,12 +60,17 @@ public class TetrisGameCore : IWindowListener
         Init();
 
         //Infinite Game Cycle
-        while (true)
+        while (isGaming)
         {
             //Spawn Player Shape
             playerShape = new PlayerShape();
             playerShape.shapeCoordinates = TetrisShapes.GetShapeCoordinates(TetrisShapes.Shape.Random);
-            playerShape.shapeCoordinates += new Coordinate(Mathf.RoundToInt(gameSize.x / 2), gameSize.y - 3);
+            playerShape.shapeCoordinates += new Coordinate(Mathf.RoundToInt(gameSize.x / 2), gameSize.y - 2);
+            if (DetectIfCollideWithGameBoard(playerShape.shapeCoordinates))
+            {
+                yield return EditorCoroutineUtility.StartCoroutine(GameOverProcess(), ArcadeWindow.instance);
+                yield break;
+            }
 
             double t = 0;
             while (playerShape != null)
@@ -115,9 +123,34 @@ public class TetrisGameCore : IWindowListener
         ArcadeWindow.instance.ShakeWindow(ArcadeWindow.ShakeWindowStrengh.Small);
     }
 
+    IEnumerator GameOverProcess()
+    {
+        OnLand();
+        for (int y = 0; y < gameBoard.GetLength(1); y++)
+        {
+            for (int x = 0; x < gameBoard.GetLength(0); x++) {
+                gameBoard[x, y] = BlockState.Block;
+                yield return null;
+            }
+        }
+
+        for (int y = 0; y < gameBoard.GetLength(1); y++)
+        {
+            for (int x = 0; x < gameBoard.GetLength(0); x++)
+            {
+                gameBoard[x, y] = BlockState.ReadyToClear;
+            }
+        }
+
+        yield return new EditorWaitForSeconds(1);
+        isGaming = false;
+        ArcadeWindow.instance.Close();
+        ArcadeWindow.instance.Focus();
+    }
+
     IEnumerator ViewUpdater()
     {
-        while (true)
+        while (isGaming)
         {
             RefreshViewArray();
             yield return null;
@@ -238,6 +271,10 @@ public class TetrisGameCore : IWindowListener
             case KeyCode.LeftArrow:
                 MovePlayer(-1);
                 break;
+            case KeyCode.Escape:
+                ArcadeWindow.instance.Close();
+                isGaming = false;
+                break;
         }
     }
 
@@ -247,7 +284,7 @@ public class TetrisGameCore : IWindowListener
         Coordinate[] coordinates = playerShape.shapeCoordinates.Clone() as Coordinate[];
         coordinates += Coordinate.Right * offset;
 
-        if (DetectIfCollideWithGameBoard(coordinates))
+        if (!DetectIfCollideWithGameBoard(coordinates))
             playerShape.shapeCoordinates = coordinates;
         else
             viewWindow.ShakeWindow(ArcadeWindow.ShakeWindowStrengh.Small);
@@ -259,7 +296,7 @@ public class TetrisGameCore : IWindowListener
         Coordinate center = Coordinate.GetCenterInCoordinates(coordinates);
         coordinates = Coordinate.RotateCoordinatesByPivot(coordinates, center, Coordinate.RotateDirection.Right);
 
-        bool isAvailable = DetectIfCollideWithGameBoard(coordinates);
+        bool isAvailable = !DetectIfCollideWithGameBoard(coordinates);
         if (isAvailable)
             playerShape.shapeCoordinates = coordinates;
         else
@@ -273,7 +310,7 @@ public class TetrisGameCore : IWindowListener
         Coordinate[] coordinates = playerShape.shapeCoordinates.Clone() as Coordinate[];
         coordinates += Coordinate.Down;
 
-        bool isAvailable = DetectIfCollideWithGameBoard(coordinates);
+        bool isAvailable = !DetectIfCollideWithGameBoard(coordinates);
         if (isAvailable)
             playerShape.shapeCoordinates = coordinates;
         else
@@ -293,13 +330,13 @@ public class TetrisGameCore : IWindowListener
         {
             //Check is outside of gameboard
             if (c.x >= gameBoard.GetLength(0) || c.y >= gameBoard.GetLength(1) || c.x < 0 || c.y < 0)
-                return false;
+                return true;
 
             //Check is overlap gameboard
             if (gameBoard[c.x, c.y] == BlockState.Block)
-                return false;
+                return true;
         }
-        return true;
+        return false;
     }
 
     void OnLand()
@@ -324,7 +361,7 @@ public class TetrisGameCore : IWindowListener
     double deltaTime;
     IEnumerator TimeDetector()
     {
-        while (true)
+        while (isGaming)
         {
             double currentTime = EditorApplication.timeSinceStartup;
             deltaTime = currentTime - lastFrameTime;
