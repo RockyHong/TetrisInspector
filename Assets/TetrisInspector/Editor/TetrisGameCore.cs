@@ -84,16 +84,21 @@ public class TetrisGameCore : IWindowListener
                 }
 
                 yield return null;
+
+                yield return EditorCoroutineUtility.StartCoroutine(DetectAndClearLineIfAny(), ArcadeWindow.instance);
             }
 
-            BlockState[,] newBlockStates;
-            bool isAnyMatchedLines = CheckMatch(out newBlockStates);
-            gameBoard = newBlockStates;
-
-            if (isAnyMatchedLines)
+            IEnumerator DetectAndClearLineIfAny()
             {
-                yield return new EditorWaitForSeconds(1f);
-                ClearLine();
+                BlockState[,] newBlockStates;
+                bool isAnyMatchedLines = CheckMatch(out newBlockStates);
+                gameBoard = newBlockStates;
+
+                if (isAnyMatchedLines)
+                {
+                    yield return new EditorWaitForSeconds(1f);
+                    ClearLine();
+                }
             }
         }
     }

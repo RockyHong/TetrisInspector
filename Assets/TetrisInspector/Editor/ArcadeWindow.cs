@@ -194,10 +194,8 @@ public class ArcadeWindow : EditorWindow
     float shake_duration = 1;
     float shake_progress = -1;
     float shake_magnetude;
-    Vector2 shake_oPos;
     public void ShakeWindow(ShakeWindowStrengh strengh)
     {
-        shake_oPos = GetWindowPosition();
         shake_progress = 0;
         switch (strengh)
         {
@@ -216,6 +214,7 @@ public class ArcadeWindow : EditorWindow
         }
     }
 
+    Vector2 lastFrameOffset;
     void ShakeWindowStep()
     {
         if (shake_progress < 1 && shake_progress >= 0)
@@ -223,28 +222,32 @@ public class ArcadeWindow : EditorWindow
             shake_progress += (float)deltaTime / shake_duration;
             shake_progress = Mathf.Clamp01(this.shake_progress);
 
-            Vector2 currentOffset = new Vector2(
+            Vector2 offset = new Vector2(
                 UnityEngine.Random.Range(-1f, 1f) * shake_magnetude * (1 - shake_progress),
                 UnityEngine.Random.Range(-1f, 1f) * shake_magnetude * (1 - shake_progress));
 
-            SetWindowPosition(shake_oPos + currentOffset);
+            SetShakeOffset(offset);
         }
         else if (shake_progress != -1)
         {
-            ClearWindowPosition();
+            SetShakeOffset(Vector2.zero);
             shake_progress = -1;
         }
     }
 
-    void ClearWindowPosition()
+    void SetShakeOffset(Vector2 newOffset)
     {
-        SetWindowPosition(shake_oPos);
+        var currentPos = GetWindowPosition();
+        currentPos -= lastFrameOffset;
+        currentPos += newOffset;
+        lastFrameOffset = newOffset;
+        SetWindowPosition(currentPos);
     }
 
     Vector2 GetWindowPosition()
     {
         Vector2 pos = position.position;
-        pos.y += 5; //Don't know why but need to fix this parameter
+        //pos.y += 5; //Don't know why but need to fix this parameter
         return pos;
     }
 
